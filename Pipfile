@@ -14,6 +14,7 @@ loguru = "*"
 lxml = "*"
 selenium = "*"
 yfinance = "*"
+regex = "*"
 
 [requires]
 python_version = "3.7"

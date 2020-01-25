@@ -1,7 +1,8 @@
-from stocks.extract import stock_extract
-from eps.extract import eps_extract
-from eps.load import eps_load
+import etl_stock
+import etl_eps
+import etl_history
 
-stocks = stock_extract.extract_all()
-metrix = eps_extract.extract(stocks)
-eps_load.load_csv(metrix)
+stocks = etl_stock.extract()[:10]
+# etl_history.extract(stocks)
+metrix = etl_eps.extract(stocks)
+etl_eps.load(metrix)
