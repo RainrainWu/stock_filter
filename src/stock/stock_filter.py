@@ -1,36 +1,85 @@
 import requests
 import json
-import datetime
 import pandas
 from loguru import logger
 
 EPS_FILE_PATH = "data/stocks/eps/eps.csv"
-ENDPOINT = "https://query1.finance.yahoo.com/v7/finance/options/{stock_id}"
+QUOTE_ENDPOINT = (
+    "https://query1.finance.yahoo.com/v6/finance/quote"
+    "?symbols={stock_id}"
+)
+STATISTIC_ENDPOINT = (
+    "https://query1.finance.yahoo.com/v10/finance/quoteSummary/{stock_id}"
+    "?modules=defaultKeyStatistics"
+)
 
 
-def compare(mode, value, threshold):
+def filter_quote(stocks, key, lowerbound, upperbound):
 
-    if (mode == "gt"):
-        return value > threshold
-    elif (mode == "ge"):
-        return value >= threshold
-    elif (mode == "lt"):
-        return value < threshold
-    elif (mode == "le"):
-        return value <= threshold
-    else:
-        logger.error("[Compare] " + mode + " mode undefined.")
-        return False
+    hold = []
+    for stock in stocks:
+
+        url = QUOTE_ENDPOINT.format(stock_id=stock.upper())
+        req = requests.get(url)
+        data = json.loads(req.text)
+        metrix = data["quoteResponse"]["result"][0]
+
+        try:
+            value = metrix[key]
+        except TypeError:
+            tpl = "[FILTER] {s} no quote data"
+            logger.warning(tpl.format(s=stock))
+            continue
+        except KeyError:
+            tpl = "[FILTER] {s} no {k} data"
+            logger.warning(tpl.format(s=stock, k=key))
+            continue
+
+        if value >= lowerbound and value < upperbound:
+            template = "[FILTER] {s} {k} {v}, selected"
+            logger.debug(template.format(s=stock, k=key, v=value))
+            hold += [stock]
+        else:
+            template = "[FILTER] {s} {k} {v}, deprecated"
+            logger.debug(template.format(s=stock, k=key, v=value))
+
+    return hold
 
 
-def backtrace_timestamp(day=0):
+def filter_statistic(stocks, key, lowerbound, upperbound):
 
-    curr = datetime.date.today()
-    date = datetime.datetime(curr.year, curr.month, curr.day, 0, 0)
-    bias = datetime.timedelta(days=day)
-    date -= bias
-    timestamp = str(int(date.timestamp()))
-    return timestamp
+    hold = []
+    for stock in stocks:
+
+        url = STATISTIC_ENDPOINT.format(stock_id=stock.upper())
+        req = requests.get(url)
+        data = json.loads(req.text)
+        result = data["quoteSummary"]["result"]
+
+        try:
+            statistic = result[0]["defaultKeyStatistics"]
+            value = statistic[key]["fmt"][:-1]
+            if value[-1] == "%":
+                value = value[:-1]
+            value = float(value)
+        except TypeError:
+            tpl = "[FILTER] {s} no statistic data"
+            logger.warning(tpl.format(s=stock))
+            continue
+        except KeyError:
+            tpl = "[FILTER] {s} no {k} data"
+            logger.warning(tpl.format(s=stock, k=key))
+            continue
+
+        if value >= lowerbound and value < upperbound:
+            template = "[FILTER] {s} {k} {v}, selected"
+            logger.debug(template.format(s=stock, k=key, v=value))
+            hold += [stock]
+        else:
+            template = "[FILTER] {s} {k} {v}, deprecated"
+            logger.debug(template.format(s=stock, k=key, v=value))
+
+    return hold
 
 
 def filter_eps_trend(stocks, magnification, years=1):
@@ -68,36 +117,3 @@ def filter_eps_trend(stocks, magnification, years=1):
             logger.debug(tpl.format(s=stock, r=" ".join(eps_sum)))
 
     return new_hold
-
-
-def filter_index_interval(self, index, lowerbound, upperbound):
-
-    # Scrape metrix from yahoo finance api, then extract index
-    # with customize rule.
-    new_hold = []
-    for stock in self.stock_hold:
-
-        url = ENDPOINT.format(stock_id=stock.upper())
-        url += "?date=" + backtrace_timestamp()
-        req = requests.get(url)
-        data = json.loads(req.text)
-        metrix = data["optionChain"]["result"][0]["quote"]
-
-        try:
-            value = metrix[index]
-        except KeyError:
-            template = "[Metrix] {s} {i} key not found"
-            logger.warning(template.format(s=stock, i=index))
-            continue
-
-        if (compare("ge", value, lowerbound) and
-                compare("lt", value, upperbound)):
-            template = "[Select] {s} {i} = {v}, selected"
-            logger.debug(template.format(s=stock, i=index, v=value))
-            new_hold += [stock]
-        else:
-            template = "[Select] {s} {i} = {v}, deprecated"
-            logger.debug(template.format(s=stock, i=index, v=value))
-
-    self.stock_hold = new_hold
-    return self
