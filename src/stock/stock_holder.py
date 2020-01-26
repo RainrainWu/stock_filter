@@ -10,6 +10,12 @@ class stock_holder():
     def get_hold(self):
         return self.stock_hold
 
+    def filter_pb_ratio(self, lowerbound, upperbound):
+        self.stock_hold = stock_filter.filter_quote(
+            self.stock_hold, "priceToBook", lowerbound, upperbound
+        )
+        return self
+
     def filter_trailing_pe(self, lowerbound, upperbound):
         self.stock_hold = stock_filter.filter_quote(
             self.stock_hold, "trailingPE", lowerbound, upperbound
@@ -40,10 +46,8 @@ class stock_holder():
         )
         return self
 
-    def apply_ONeil(self):
-
-        stocks = self.stock_hold
-        stocks = stock_filter.filter_institution_held(stocks, 50, 70)
-        stocks = stock_filter.filter_profit_margin(stocks, 20)
-        stocks = stock_filter.filter_peg_ratio(stocks, 0, 1)
-        self.stock_hold = stocks
+    def filter_eps_trend(self, lowerbound, upperbound, years):
+        self.stock_hold = stock_filter.filter_eps_trend(
+            self.stock_hold, lowerbound, upperbound, years
+        )
+        return self

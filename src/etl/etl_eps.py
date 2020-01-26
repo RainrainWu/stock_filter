@@ -9,6 +9,7 @@ EPS_XPATH = (
     "/html/body/div[4]/div/main/div/div[4]/div[2]/div/div[1]/"
     "div/div[1]/table/tbody/tr[19]/td[{c}]"
 )
+PROCESS_TEMPLATE = "[EXTRACT] extracting {s} Process {c}/{a}"
 COL_LIST = [1, 2, 3]
 HEADER = ["STOCK", "2019", "2018", "2017"]
 LOAD_PATH = "data/stocks/eps/eps.csv"
@@ -20,9 +21,10 @@ def extract(stocks):
     driver = webdriver.Chrome(chrome_options=options)
     pattern = re.compile("[0-9]+[\.]*[0-9]*")
     eps_metrix = [HEADER]
+    count = 1
 
     for stock in stocks:
-        logger.debug(EPS_URL.format(s=stock.lower()))
+        logger.debug(PROCESS_TEMPLATE.format(s=stock, c=count, a=len(stocks)))
         driver.get(EPS_URL.format(s=stock))
         eps_stock = [stock]
 
@@ -39,6 +41,7 @@ def extract(stocks):
                 eps_stock += [""]
 
         eps_metrix += [eps_stock]
+        count += 1
 
     driver.close()
     return eps_metrix

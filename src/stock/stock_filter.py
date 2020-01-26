@@ -82,7 +82,7 @@ def filter_statistic(stocks, key, lowerbound, upperbound):
     return hold
 
 
-def filter_eps_trend(stocks, magnification, years=1):
+def filter_eps_trend(stocks, lowerbound, upperbound, years=1):
 
     # with pre-load eps historical data to pick up high-growth
     # stock
@@ -106,7 +106,7 @@ def filter_eps_trend(stocks, magnification, years=1):
         ratios = []
         for i in range(years):
             mul = float(eps_sum[i]) / float(eps_sum[i+1])
-            ratios += [mul >= magnification]
+            ratios += [(mul >= lowerbound and mul < upperbound)]
 
         if all(ratios):
             tpl = "[FILTER] [EPS] {s} {r}, selected"
