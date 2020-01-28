@@ -7,14 +7,14 @@ verify_ssl = true
 
 [packages]
 requests = "*"
-pandas = "*"
 numpy = "*"
 flake8 = "*"
 loguru = "*"
 lxml = "*"
 selenium = "*"
-yfinance = "*"
 regex = "*"
+python-dotenv = "*"
+pandas = "*"
 
 [requires]
 python_version = "3.7"
